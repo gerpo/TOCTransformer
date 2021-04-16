@@ -9,6 +9,8 @@
 	  <SelfContained>true</SelfContained>
 	  <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 	  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+      <PublishTrimmed>true</PublishTrimmed>
+      <TrimMode>CopyUsed</TrimMode>
   </PropertyGroup>
 
   <ItemGroup>
