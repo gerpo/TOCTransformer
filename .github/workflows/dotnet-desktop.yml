@@ -95,3 +95,5 @@ jobs:
       with:
         name: MSIX Package
         path: bin\${{ env.Configuration }}\Publish
+      env:
+        Configuration: ${{ matrix.configuration }}
