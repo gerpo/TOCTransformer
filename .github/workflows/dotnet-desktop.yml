@@ -79,7 +79,9 @@ jobs:
         Configuration: ${{ matrix.configuration }}
 
     - name: Publish
-      run: dotnet publish
+      run: dotnet publish --configuration $env:Configuration --no-restore
+      env:
+        Configuration: ${{ matrix.configuration }}
 
     # Upload the MSIX package: https://github.com/marketplace/actions/upload-artifact
     - name: Upload build artifacts
