@@ -94,4 +94,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: MSIX Package
-        path: ${{ env.Wap_Project_Directory }}\AppPackages
+        path: bin\${{ env.Configuration }}\Publish
