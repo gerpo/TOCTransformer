@@ -85,7 +85,7 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: MSIX Package
+        name: TocTransformer
         path: D:\a\TOCTransfomer\TOCTransfomer\TOCTransfomer\bin\${{ env.Configuration }}\net5.0-windows\win-x64\publish
       env:
         Configuration: ${{ matrix.configuration }}
