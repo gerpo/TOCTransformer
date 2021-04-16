@@ -1,0 +1,15 @@
+﻿<Window x:Class="TOCTransfomer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TOCTransfomer"
+        mc:Ignorable="d"
+        Icon="/favicon-32x32.ico"
+        SizeToContent="WidthAndHeight"
+        Title="TOC Transfomer" ResizeMode="CanMinimize" WindowStyle="SingleBorderWindow" MaxWidth="600">
+    <StackPanel>
+        <Button Name="btn_transform" MinWidth="350" Margin="20,10" FontSize="16" Click="Btn_transform_Click">CSV transformieren...</Button>
+        <TextBlock x:Name="info_box" Text="" Margin="20, 0, 20, 10" TextWrapping="Wrap" TextAlignment="Center" />
+    </StackPanel>
+</Window>
