@@ -44,7 +44,10 @@ namespace TOCTransfomer
             {
                 var outputValues = _dataFrame.Rows
                     .Where(r => FilterStations(r.Value))
-                    .Select(r => CreateOutputObject(r.Value)).SortBy(r => r.Name).IndexOrdinally().Select(r =>
+                    .Select(r => CreateOutputObject(r.Value))
+                    .SortBy(r => r.Name)
+                    .IndexOrdinally()
+                    .Select(r =>
                      {
                          r.Value.UniqueId = r.Key + 1;
                          return r.Value;
@@ -55,6 +58,7 @@ namespace TOCTransfomer
 
                 var outputFrame = Frame.FromRecords(outputValues);
                 outputFrame.SaveCsv(filePath, separator: ';', culture: new CultureInfo("en-US"));
+                outputFrame.SaveCsv($"{filePath}.csv", separator: ';', culture: new CultureInfo("en-US"));
             }
             catch (Exception)
             {
