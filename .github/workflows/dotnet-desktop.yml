@@ -63,6 +63,9 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
+        
+    - name: Check
+      run: ls -la
     
     - name: Upload Release Asset
       id: upload-release-asset
