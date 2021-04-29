@@ -50,7 +50,7 @@ namespace TOCTransfomer
             }
             catch (Exception ex)
             {
-                info_box.Text = "Unbekannter Fehler." +
+                info_box.Text = $"Unbekannter Fehler." +
                     "\r\n" +
                     "\r\n" +
                     $"{ex.Message}";
