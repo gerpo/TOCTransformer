@@ -10,6 +10,7 @@
         Title="TOC Transfomer" ResizeMode="CanMinimize" WindowStyle="SingleBorderWindow" MaxWidth="600">
     <StackPanel>
         <Button Name="btn_transform" MinWidth="350" Margin="20,10" FontSize="16" Click="Btn_transform_Click">CSV transformieren...</Button>
-        <TextBlock x:Name="info_box" Text="" Margin="20, 0, 20, 10" TextWrapping="Wrap" TextAlignment="Center" />
+        <TextBlock x:Name="info_box" Text="Select a csv file to transform" Margin="20, 0, 20, 5" TextWrapping="Wrap" TextAlignment="Center" />
+        <ProgressBar x:Name="progress_bar" Maximum="4" Height="5" Margin="20, 0, 20, 10" />
     </StackPanel>
 </Window>

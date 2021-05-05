@@ -18,8 +18,10 @@ namespace TOCTransfomer
             transformer = new Transformer();
         }
 
-        private void Btn_transform_Click(object sender, RoutedEventArgs e)
+        private async void  Btn_transform_Click(object sender, RoutedEventArgs e)
         {
+            Reset();
+
             var fileDialog = new OpenFileDialog()
             {
                 CheckFileExists = true,
@@ -32,9 +34,19 @@ namespace TOCTransfomer
             var file = fileDialog.FileName;
             try
             {
+                UpdateProgress("CSV Lesen");
+
                 transformer.ReadCSV(file);
-                transformer.WriteTransformedCSV();
-                transformer.WriteATD();
+                
+                UpdateProgress("Schreibe TXT und CSV");
+
+                await transformer.WriteTransformedCSV();
+
+                UpdateProgress("Schreibe ATD");
+
+                await transformer.WriteATD();
+
+                UpdateProgress();
             }
             catch (Transformer.ReadingException)
             {
@@ -62,5 +74,26 @@ namespace TOCTransfomer
             info_box.Foreground = Brushes.Green;
         }
 
+        private void Reset()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                progress_bar.Value = 0;
+                info_box.Text = "Select a csv file to transform";
+                info_box.Foreground = Brushes.Black;
+            });
+        }
+
+        private void UpdateProgress(string text = "")
+        {
+            Dispatcher.Invoke(() =>
+            {
+                progress_bar.Value++;
+                info_box.Text = text;
+                info_box.Foreground = Brushes.Orange;
+            });
+        }
+
     }
+
 }

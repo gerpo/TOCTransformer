@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
 
 namespace TOCTransfomer
 {
@@ -32,7 +33,7 @@ namespace TOCTransfomer
             }
         }
 
-        internal void WriteTransformedCSV(string filePath = null)
+        internal async Task WriteTransformedCSV(string filePath = null)
         {
             if (_dataFrame is null)
                 return;
@@ -42,23 +43,26 @@ namespace TOCTransfomer
 
             try
             {
-                var outputValues = _dataFrame.Rows
-                    .Where(r => FilterStations(r.Value))
-                    .Select(r => CreateOutputObject(r.Value))
-                    .SortBy(r => r.Name)
-                    .IndexOrdinally()
-                    .Select(r =>
-                     {
-                         r.Value.UniqueId = r.Key + 1;
-                         return r.Value;
-                     });
+                await Task.Run(() =>
+                {
+                    var outputValues = _dataFrame.Rows
+                        .Where(r => FilterStations(r.Value))
+                        .Select(r => CreateOutputObject(r.Value))
+                        .SortBy(r => r.Name)
+                        .IndexOrdinally()
+                        .Select(r =>
+                         {
+                             r.Value.UniqueId = r.Key + 1;
+                             return r.Value;
+                         });
 
-                outputValues = CheckForDirection(outputValues);
+                    outputValues = CheckForDirection(outputValues);
 
 
-                var outputFrame = Frame.FromRecords(outputValues);
-                outputFrame.SaveCsv(filePath, separator: ';', culture: new CultureInfo("en-US"));
-                outputFrame.SaveCsv($"{filePath}.csv", separator: ';', culture: new CultureInfo("en-US"));
+                    var outputFrame = Frame.FromRecords(outputValues);
+                    outputFrame.SaveCsv(filePath, separator: ';', culture: new CultureInfo("en-US"));
+                    outputFrame.SaveCsv($"{filePath}.csv", separator: ';', culture: new CultureInfo("de-DE"));
+                });
             }
             catch (Exception)
             {
@@ -108,7 +112,7 @@ namespace TOCTransfomer
             return float.Parse(output, new CultureInfo("en-US"));
         }
 
-        public void WriteATD(string filePath = null)
+        public async Task WriteATD(string filePath = null)
         {
             if (_dataFrame is null)
                 return;
@@ -116,13 +120,16 @@ namespace TOCTransfomer
             if (filePath is null)
                 filePath = Path.ChangeExtension(_filePath, ".ATD");
 
-            using StreamWriter writer = new(filePath);
-            WriteATDHead(writer);
+            await Task.Run(() =>
+            {
+                using StreamWriter writer = new(filePath);
+                WriteATDHead(writer);
 
-            writer.WriteLine($"File={Path.ChangeExtension(Path.GetFileName(_filePath), ".txt")}");
-            writer.WriteLine($"Columns_Size={OutputRow.OUTPUT_TYPES.Count}");
+                writer.WriteLine($"File={Path.ChangeExtension(Path.GetFileName(_filePath), ".txt")}");
+                writer.WriteLine($"Columns_Size={OutputRow.OUTPUT_TYPES.Count}");
 
-            WriteATDBody(writer);
+                WriteATDBody(writer);
+            });
         }
 
         private void WriteATDHead(StreamWriter writer)
