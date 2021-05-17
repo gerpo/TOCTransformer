@@ -65,7 +65,7 @@ jobs:
         prerelease: false
         
     - name: Check
-      run: ls
+      run: ls D:\a\TOCTransfomer\TOCTransfomer\TOCTransfomer\bin\Release\net5.0-windows\win-x64\publish
     
     - name: Upload Release Asset
       id: upload-release-asset
