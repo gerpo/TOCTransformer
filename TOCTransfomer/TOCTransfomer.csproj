@@ -11,7 +11,12 @@
 	  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
       <PublishTrimmed>false</PublishTrimmed>
 	  <OutputType>Exe</OutputType>
-	  <DebugType>None</DebugType>
+	  <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="27.0.3" />
     <PackageReference Include="Deedle" Version="2.3.0" />
     <PackageReference Include="WindowsAPICodePack-Core" Version="1.1.2" />
   </ItemGroup>

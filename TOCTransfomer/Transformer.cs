@@ -5,13 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using CsvHelper;
+using System.Collections.Generic;
 
 namespace TOCTransfomer
 {
     internal class Transformer
     {
         private string _filePath;
-        private Frame<int, string> _dataFrame;
+        private IList<OutputRow> _dataRows;
 
         private readonly string[] ATD_HEAD = new[] {
             "[Main]",
@@ -20,22 +22,51 @@ namespace TOCTransfomer
             "Name=BTS_TABLE"
         };
 
+
         internal void ReadCSV(string file)
         {
             try
             {
                 _filePath = file;
-                _dataFrame = Frame.ReadCsv(file, hasHeaders: true, separators: ";");
+                var config = new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture)
+                {
+                    HasHeaderRecord = true,
+                    Comment = '#',
+                    AllowComments = true,
+                    Delimiter = "|",
+                    Mode = CsvMode.NoEscape,
+                    BadDataFound = x =>
+                    {
+                        Console.WriteLine($"Bad data: <{x.RawRecord}>");
+                    },
+                };
+                _dataRows = new List<OutputRow>();
+                
+                using var streamReader = File.OpenText(_filePath);
+                using (var csvReader = new CsvReader(streamReader, config))
+                {
+                    csvReader.Read();
+                    csvReader.ReadHeader();
+                    while(csvReader.Read())
+                    {
+                        if (!FilterStations(csvReader)) continue;
+                        var f = CreateOutputObject(csvReader);
+                        
+                        _dataRows.Add(f);
+                    }
+                }
+                
+                //_dataFrame = Frame.ReadCsv(file, hasHeaders: true, separators: "|");
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new ReadingException();
+                throw new ReadingException("Error reading file.", e);
             }
         }
 
         internal async Task WriteTransformedCSV(string filePath = null)
         {
-            if (_dataFrame is null)
+            if (!_dataRows.Any())
                 return;
 
             if (filePath is null)
@@ -45,15 +76,12 @@ namespace TOCTransfomer
             {
                 await Task.Run(() =>
                 {
-                    var outputValues = _dataFrame.Rows
-                        .Where(r => FilterStations(r.Value))
-                        .Select(r => CreateOutputObject(r.Value))
-                        .SortBy(r => r.Name)
-                        .IndexOrdinally()
-                        .Select(r =>
+                    var outputValues = _dataRows
+                        .OrderBy(r => r.Name)
+                        .Select((r, i) =>
                          {
-                             r.Value.UniqueId = r.Key + 1;
-                             return r.Value;
+                             r.UniqueId = i + 1;
+                             return r;
                          });
 
                     outputValues = CheckForDirection(outputValues);
@@ -71,42 +99,43 @@ namespace TOCTransfomer
 
         }
 
-        private static bool FilterStations(ObjectSeries<string> r)
+        private static bool FilterStations(CsvReader r)
         {
-            return r.GetAs<string>("SITE_MANAGER.BS_TYPE") == "TVFZ" || r.GetAs<string>("SITE_MANAGER.BS_TYPE") == "mBS";
+            return r.GetField<string>("SITE_MANAGER.BS_TYPE") == "TVFZ" || r.GetField<string>("SITE_MANAGER.BS_TYPE") == "mBS";
         }
-        private static Series<int, OutputRow> CheckForDirection(Series<int, OutputRow> outputValues)
+        private static IEnumerable<OutputRow> CheckForDirection(IEnumerable<OutputRow> outputValues)
         {
-            foreach (var outputRow in outputValues.Values)
+            foreach (var outputRow in outputValues)
             {
-                if (outputValues.Values.Count(v => v.Name == outputRow.Name) > 1)
+                if (outputValues.Count(v => v.Name == outputRow.Name) > 1)
                     outputRow.IsDirected = 1;
             }
-            return outputValues;
+            return outputValues;    
         }
 
-        private static OutputRow CreateOutputObject(ObjectSeries<string> r)
+        private static OutputRow CreateOutputObject(CsvReader r)
         {
             return new OutputRow()
             {
-                Name = r.GetAs<string>("SITE.NAME"),
-                PosLongitude = InputStringToOutputFloat(r.GetAs<string>("SITE.LONGITUDE")),
-                PosLatitude = InputStringToOutputFloat(r.GetAs<string>("SITE.LATITUDE")),
-                Power = r.GetAs<float>("ZONE.FS_POWER_DBM", 0),
-                IsDirected = r.GetAs<int>("ANTENNA_SYSTEM.DIRECTION_DEG") > 0 ? 1 : 0,
-                Direction = r.GetAs<int>("ANTENNA_SYSTEM.DIRECTION_DEG"),
-                Channel = r.GetAs<int>("CELL.G_BCCH") + 3599,
-                LAC = r.GetAs<int>("CELL.LAC"),
-                LAC_Hex = r.GetAs<int>("CELL.LAC").ToString("X").ToUpper(),
-                CELL_NE_ID = r.GetAs<string>("CELL.NE_ID"),
-                SITE_BS_TYPE = r.GetAs<string>("SITE_MANAGER.BS_TYPE"),
-                ANTENNA_SYSTEM = r.GetAs<string>("ANTENNA_SYSTEM.NAME"),
+                Name = r.GetField<string>("SITE.NAME"),
+                PosLongitude = InputStringToOutputFloat(r.GetField<string>("SITE.LONGITUDE")),
+                PosLatitude = InputStringToOutputFloat(r.GetField<string>("SITE.LATITUDE")),
+                Power = r.GetField<float>("ZONE.FS_POWER_DBM", 0),
+                IsDirected = r.GetField<int>("ANTENNA_SYSTEM.DIRECTION_DEG") > 0 ? 1 : 0,
+                Direction = r.GetField<int>("ANTENNA_SYSTEM.DIRECTION_DEG"),
+                Channel = r.GetField<int>("CELL.G_BCCH") + 3599,
+                LAC = r.GetField<int>("CELL.LAC"),
+                LAC_Hex = r.GetField<int>("CELL.LAC").ToString("X").ToUpper(),
+                CELL_NE_ID = r.GetField<string>("CELL.NE_ID"),
+                SITE_BS_TYPE = r.GetField<string>("SITE_MANAGER.BS_TYPE"),
+                ANTENNA_SYSTEM = r.GetField<string>("ANTENNA_SYSTEM.NAME"),
             };
         }
 
         private static float InputStringToOutputFloat(string input)
         {
             var index = input.IndexOf(".");
+            if (index < 0) return float.Parse(input, new CultureInfo("en-US"));
             var output = input.Replace(".", "*").Remove(index, 1).Insert(index, ".").Replace("*", "");
 
             return float.Parse(output, new CultureInfo("en-US"));
@@ -114,7 +143,7 @@ namespace TOCTransfomer
 
         public async Task WriteATD(string filePath = null)
         {
-            if (_dataFrame is null)
+            if (!_dataRows.Any())
                 return;
 
             if (filePath is null)
